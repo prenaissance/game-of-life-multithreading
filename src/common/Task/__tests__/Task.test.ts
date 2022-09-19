@@ -8,8 +8,7 @@ describe("Task", () => {
         const task = new Task(() => {
             return "asdf";
         });
-        task.wait();
-        expect(task.result).toBe("asdf");
+        expect(task.result).resolves.toBe("asdf");
 
         const result = await Task.run(() => {
             return 7;

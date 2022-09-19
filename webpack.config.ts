@@ -14,9 +14,6 @@ const config: webpack.Configuration = {
             {
                 test: /\.ts$/,
                 use: "ts-loader",
-                // options: {
-                //     configFile: path.join(__dirname, "tsconfig.json")
-                // },
                 exclude: /node_modules/,
             },
             {
@@ -39,7 +36,7 @@ const config: webpack.Configuration = {
     plugins: [
         new HtmlWebpackPlugin({
             minify: false,
-            title: "Canvas Paint",
+            title: "Game of life",
             template: path.join(__dirname, "src", "index.html")
         }),
         new MiniCssExtractPlugin({

@@ -1,4 +1,3 @@
-import { resolve } from "path";
 import Queue from "../CircularQueue/CircularQueue";
 
 type TaskConfig = {
@@ -14,22 +13,35 @@ class Task<T>{
 
     private _isRunning = false;
     private _result: T | null = null;
-    private _resolve?: (value: T) => void;
-    private _reject?: (reason?: any) => void;
+    private _promise: Promise<T>;
+    private _handleResponse: (e: MessageEvent<any>) => void;
+    private _handleError: (err: any) => void;
 
     get result() {
-        this.wait();
-        return this._result!;
+        return this._promise;
     }
 
-    constructor(private readonly _fn: () => T, private readonly _ctx: Record<string, any> = {}) { }
+    constructor(private readonly _fn: () => T, private readonly _ctx: Record<string, any> = {}) {
+        const promise = new Promise<T>((resolve, reject) => {
+            this._handleResponse = (e: MessageEvent<any>) => {
+                const event = e as MessageEvent<WorkerResponse<T>>;
+                resolve(event.data.response);
+            };
+
+            this._handleError = (e: ErrorEvent) => {
+                reject(e.error);
+            };
+        });
+        this._promise = promise;
+    }
 
     // only call when the worker finished his task
-    private startNext(worker: Worker) {
+    private static startNext(worker: Worker) {
+        const freedIndex = Task._busyWorkers.findIndex(x => x === worker);
+        Task._busyWorkers.splice(freedIndex, 1);
+
         if (Task._queue.empty()) {
-            const freedIndex = Task._busyWorkers.findIndex(x => x === worker);
-            delete Task._busyWorkers[freedIndex];
-            Task._freeWorkers.push(worker);
+            this._freeWorkers.push(worker);
             return;
         }
 
@@ -38,38 +50,20 @@ class Task<T>{
     }
 
     private registerWorker(worker: Worker) {
-        const handleResponse = (e: MessageEvent<any>) => {
-            const event = e as MessageEvent<WorkerResponse<T>>;
-            this._resolve!(event.data.response);
-            this.startNext(worker);
-        };
-
-        const handleError = (e: ErrorEvent) => {
-            this._reject!(e.error);
-            this.startNext(worker);
-        };
-
-        worker.removeEventListener("message", handleResponse);
-        worker.removeEventListener("error", handleError);
-
-        worker.addEventListener("message", handleResponse);
-        worker.addEventListener("error", handleError);
+        worker.onmessage = this._handleResponse;
+        worker.onerror = this._handleError;
 
         worker.postMessage({ fnString: this._fn.toString(), ctx: this._ctx });
+        Task._busyWorkers.push(worker);
+
+        this._promise.finally(() => {
+            Task.startNext(worker);
+        });
     }
 
-
     start() {
-        const promise = new Promise<T>((resolve, reject) => {
-            resolve = this._resolve as typeof resolve || resolve;
-            reject = this._reject || reject;
-
-            this._resolve = resolve;
-            this._reject = reject;
-        });
-
         if (this._result || this._isRunning) {
-            return promise;
+            return this._promise;
         }
 
         this._isRunning = true;
@@ -78,32 +72,19 @@ class Task<T>{
             const worker = Task._freeWorkers.pop()!;
             this.registerWorker(worker);
         }
-        else if (Task._busyWorkers.length === Task.config.maxWorkers) {
-            Task._queue.push(this as Task<unknown>);
-            return;
-        }
-        else {
+        else if (Task._freeWorkers.length + Task._busyWorkers.length < Task.config.maxWorkers) {
             const worker = new Worker(new URL("./worker.ts", import.meta.url));
-            Task._busyWorkers.push(worker);
             this.registerWorker(worker);
         }
-        return promise;
-    }
-
-    wait() {
-        if (this._result) {
-            return this._result;
+        else {
+            Task._queue.push(this as Task<unknown>);
         }
-        this.start();
-        // Completely blocks main thread
-        // will cause major problems if called with falsy response
-        while (!this._result) { }
-        return this._result;
+        return this._promise;
     }
 
     static run<T>(fn: () => T, ctx: Record<string, any> = {}) {
         const task = new Task(fn, ctx);
-        return task.start();
+        return task.start()!;
     }
 
     static async whenAll<T>(...tasks: Task<T>[]) {

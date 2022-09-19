@@ -1,6 +1,6 @@
 import LinkedList from "./LinkedList";
 
-class Queue<T> implements Iterable<T> {
+class CircularQueue<T> implements Iterable<T> {
     private _start: LinkedList<T> | null = null;
     private _end: LinkedList<T> | null = null;
     private _length = 0;
@@ -66,4 +66,4 @@ class Queue<T> implements Iterable<T> {
     }
 }
 
-export default Queue;
+export default CircularQueue;

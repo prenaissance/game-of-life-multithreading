@@ -6,31 +6,48 @@ const canvas: HTMLCanvasElement = document.querySelector("#canvas")!;
 const ctx = canvas.getContext("2d", { alpha: true })!;
 
 //mutate DOM after canvas creation, some events depend on the context being initialized.
-const i = 1;
 const main = async () => {
+    Task.config.maxWorkers = 16;
 
-    const response = await Task.run(() => {
-        try {
-            return i + 2;
-        }
-        catch {
-            return 10;
-        }
-    }, { i });
+    const start = performance.now();
 
-    const otherTasks = Array(2).fill(1).map(() => {
+    const otherTasks = Array(50).fill(1).map(() => {
         return new Task(() => {
-            try {
-                return i + 2;
-            }
-            catch {
-                return 10;
-            }
+            function fibonacci(n: number): number {
+                if (n <= 1) {
+                    return 1;
+                }
+                return fibonacci(n - 1) + fibonacci(n - 2);
+            };
+            const result = fibonacci(37);
+            return (result);
         });
     });
 
-    const completed = await Task.whenAll(...otherTasks);
-    console.log(completed.map(task => task.result));
+    otherTasks.forEach(task => task.start());
+    await Task.whenAll(...otherTasks);
+
+    const end = performance.now();
+    console.log(end - start);
+
+    const start2 = performance.now();
+
+    Array(50).fill(1).map(() => {
+        function fibonacci(n: number): number {
+            if (n <= 1) {
+                return 1;
+            }
+            return fibonacci(n - 1) + fibonacci(n - 2);
+        };
+        const result = fibonacci(37);
+    });
+
+    otherTasks.forEach(task => task.start());
+    await Task.whenAll(...otherTasks);
+
+    const end2 = performance.now();
+
+    console.log(end2 - start2);
 
 };
 
