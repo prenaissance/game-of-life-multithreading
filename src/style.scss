@@ -14,24 +14,42 @@ body {
     align-items: center;
     justify-content: center;
     padding-top: 20px;
+    background: radial-gradient(circle, rgba(41, 27, 12, 1) 0%, rgba(45, 45, 45, 1) 100%);
+
 }
 
 #canvas {
-    margin-top: 15px;
-    margin-left: auto;
-    margin-right: auto;
     border: 1px solid black;
     box-shadow: 0 0 3px 3px rgba(0, 0, 0, 0.3);
-    grid-column: 2;
-    grid-row: 2;
-    width: 500px;
-    height: 500px;
+    height: 100%;
+    aspect-ratio: 1/1;
 }
 
-.grid-container {
-    max-width: 50%;
-    min-width: 360px;
-    display: grid;
+.flex-container {
+    display: flex;
+    height: 90vh;
     gap: 3px;
-    grid-template-columns: 30px, minmax(300px, 100%), 30px;
+    flex-direction: column;
+}
+
+.controls {
+    padding-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+
+    >button {
+        background-color: orange;
+        border: 0;
+        padding: 4px 10px;
+        border-radius: 8%;
+
+        &:hover {
+            filter: brightness(110%);
+        }
+
+        &:active {
+            filter: brightness(90%);
+        }
+    }
 }
