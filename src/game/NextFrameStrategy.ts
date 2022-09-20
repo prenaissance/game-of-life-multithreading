@@ -1,15 +1,5 @@
 import { INextFrameStrategy } from "./interfaces/INextFrameStrategy";
-
-const neighborOffsets = [
-    [-1, -1],
-    [-1, 0],
-    [-1, 1],
-    [0, 1],
-    [1, 1],
-    [1, 0],
-    [1, -1],
-    [0, -1]
-];
+import { neighborOffsets } from "./utils/consts";
 
 const inMatrix = (width: number, height: number, x: number, y: number) => {
     return x >= 0 && x < width && y >= 0 && y < height;

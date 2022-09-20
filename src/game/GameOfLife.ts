@@ -1,9 +1,12 @@
+import FrameRateCounter from "./FrameRateCounter";
 import { INextFrameStrategy } from "./interfaces/INextFrameStrategy";
 import NextFrameStrategy from "./NextFrameStrategy";
 
 class GameOfLife {
+    private _timeStamp = 0;
     private _matrix: boolean[][];
     private _animationFrame: any;
+    frameRateCounter = new FrameRateCounter();
     nextFrame: INextFrameStrategy = new NextFrameStrategy();
 
     constructor(private readonly _ctx: CanvasRenderingContext2D, xw: number, yh: number) {
@@ -28,14 +31,24 @@ class GameOfLife {
     }
 
     async start() {
-        this._animationFrame = setInterval(async () => {
+        const run = async () => {
+            const frameTime = window.performance.now() - this._timeStamp;
+            if (frameTime < 50) {
+                window.requestAnimationFrame(run);
+                return;
+            }
+
+            this._timeStamp = performance.now();
             this.render();
             this._matrix = await this.nextFrame.execute(this._matrix);
-        }, 300);
+            this.frameRateCounter.addFrame();
+            requestAnimationFrame(run);
+        }
+        this._animationFrame = window.requestAnimationFrame(run);
     }
 
     pause() {
-        clearTimeout(this._animationFrame);
+        window.cancelAnimationFrame(this._animationFrame);
     }
 }
 

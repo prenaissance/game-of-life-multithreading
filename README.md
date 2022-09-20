@@ -1,13 +1,15 @@
 # game-of-life-multithreading
-I know there are more efficient algorithms for game of life, I just wanted to tinker with Workers in js
+I know there are more efficient algorithms for game of life, I just wanted to tinker with Workers in js.
 
-## TODO:
-- Add option to toggle multiprocessing
-- Add fps counter
-- Add user input for changing the game state
+Multiprocessing works and loads up all your cpu cores, but it's slower than single threading because of the limitations with sharing memory between threads with web workers and my experimental implementation of it.
 
 # Changelog
 
+## [1.1.0]
+
+### Added
+- Option to toggle multiprocessing
+- Fps counter
 ## [1.0.0]
 
 ### Added
